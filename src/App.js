@@ -265,35 +265,71 @@ const useWeather = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
+  const API_KEY = process.env.REACT_APP_WEATHER_API_KEY;
+  const BASE_URL = 'https://api.openweathermap.org/data/2.5';
+
   const fetchWeather = async (city = 'London') => {
     setLoading(true);
     setError(null);
     
     try {
-      // Mock data for demo purposes
-      const mockWeather = {
-        name: city,
-        main: { temp: 22, feels_like: 25, humidity: 65, pressure: 1013 },
-        weather: [{ main: 'Clear', description: 'clear sky', icon: '01d' }],
-        wind: { speed: 3.5 },
-        visibility: 10000,
-        sys: { sunrise: 1640925600, sunset: 1640961600 }
-      };
-      
-      const mockForecast = {
-        list: [
-          { dt_txt: '2024-01-01', main: { temp_max: 25, temp_min: 18 }, weather: [{ main: 'Sunny' }] },
-          { dt_txt: '2024-01-02', main: { temp_max: 23, temp_min: 16 }, weather: [{ main: 'Cloudy' }] },
-          { dt_txt: '2024-01-03', main: { temp_max: 20, temp_min: 14 }, weather: [{ main: 'Rain' }] },
-          { dt_txt: '2024-01-04', main: { temp_max: 24, temp_min: 17 }, weather: [{ main: 'Partly Cloudy' }] },
-          { dt_txt: '2024-01-05', main: { temp_max: 26, temp_min: 19 }, weather: [{ main: 'Sunny' }] }
-        ]
-      };
-      
-      setWeather(mockWeather);
-      setForecast(mockForecast);
+      if (!API_KEY || API_KEY === 'your_openweathermap_api_key_here') {
+        // Dynamic mock data based on city
+        const mockData = {
+          London: { temp: 15, condition: 'Cloudy', humidity: 72 },
+          Paris: { temp: 18, condition: 'Clear', humidity: 65 },
+          'New York': { temp: 12, condition: 'Rain', humidity: 80 },
+          Tokyo: { temp: 22, condition: 'Sunny', humidity: 58 },
+          Sydney: { temp: 25, condition: 'Clear', humidity: 60 },
+          Dubai: { temp: 35, condition: 'Sunny', humidity: 45 },
+          Moscow: { temp: -5, condition: 'Snow', humidity: 85 }
+        };
+        
+        const cityData = mockData[city] || { temp: 20, condition: 'Clear', humidity: 60 };
+        
+        const mockWeather = {
+          name: city,
+          main: { 
+            temp: cityData.temp, 
+            feels_like: cityData.temp + 3, 
+            humidity: cityData.humidity, 
+            pressure: 1013 
+          },
+          weather: [{ main: cityData.condition, description: cityData.condition.toLowerCase(), icon: '01d' }],
+          wind: { speed: Math.random() * 5 + 2 },
+          visibility: 10000,
+          sys: { sunrise: Date.now()/1000 - 3600, sunset: Date.now()/1000 + 3600 }
+        };
+        
+        const mockForecast = {
+          list: [
+            { dt_txt: new Date().toISOString(), main: { temp_max: cityData.temp + 3, temp_min: cityData.temp - 2 }, weather: [{ main: cityData.condition }] },
+            { dt_txt: new Date(Date.now() + 86400000).toISOString(), main: { temp_max: cityData.temp + 1, temp_min: cityData.temp - 4 }, weather: [{ main: 'Cloudy' }] },
+            { dt_txt: new Date(Date.now() + 172800000).toISOString(), main: { temp_max: cityData.temp - 1, temp_min: cityData.temp - 6 }, weather: [{ main: 'Rain' }] },
+            { dt_txt: new Date(Date.now() + 259200000).toISOString(), main: { temp_max: cityData.temp + 2, temp_min: cityData.temp - 3 }, weather: [{ main: 'Partly Cloudy' }] },
+            { dt_txt: new Date(Date.now() + 345600000).toISOString(), main: { temp_max: cityData.temp + 4, temp_min: cityData.temp - 1 }, weather: [{ main: 'Sunny' }] }
+          ]
+        };
+        
+        setWeather(mockWeather);
+        setForecast(mockForecast);
+      } else {
+        // Real API calls
+        const [weatherRes, forecastRes] = await Promise.all([
+          fetch(`${BASE_URL}/weather?q=${city}&appid=${API_KEY}&units=metric`),
+          fetch(`${BASE_URL}/forecast?q=${city}&appid=${API_KEY}&units=metric`)
+        ]);
+        
+        if (!weatherRes.ok) throw new Error('City not found');
+        
+        const weatherData = await weatherRes.json();
+        const forecastData = await forecastRes.json();
+        
+        setWeather(weatherData);
+        setForecast(forecastData);
+      }
     } catch (err) {
-      setError('Failed to fetch weather data');
+      setError(err.message || 'Failed to fetch weather data');
     } finally {
       setLoading(false);
     }
@@ -379,6 +415,8 @@ function App() {
                 type="text"
                 placeholder="Search for a city..."
                 value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />hQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
               <SearchIcon size={20} onClick={handleSearch} />
