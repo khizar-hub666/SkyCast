@@ -415,8 +415,6 @@ function App() {
                 placeholder="Search for a city..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-              />hQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
               />
               <SearchIcon size={20} onClick={handleSearch} />
             </form>
