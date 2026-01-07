@@ -1,9 +1,6 @@
-import React, { useState, useEffect, createContext, useContext } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import styled, { ThemeProvider, createGlobalStyle } from 'styled-components';
-import { Sun, Moon, MapPin, Search, RefreshCw, Wind, Droplets, Eye, Gauge, Sunrise, Sunset } from 'lucide-react';
-
-// Theme Context
-const ThemeContext = createContext();
+import { Sun, Moon, MapPin, Search, RefreshCw, Wind, Droplets, Eye, Gauge, Sunrise } from 'lucide-react';
 
 const lightTheme = {
   primary: '#3B82F6',
@@ -335,11 +332,13 @@ const useWeather = () => {
     }
   };
 
-  useEffect(() => {
-    fetchWeather();
-  }, []);
+  const memoizedFetchWeather = useCallback(fetchWeather, [API_KEY, BASE_URL]);
 
-  return { weather, forecast, loading, error, fetchWeather };
+  useEffect(() => {
+    memoizedFetchWeather();
+  }, [memoizedFetchWeather]);
+
+  return { weather, forecast, loading, error, fetchWeather: memoizedFetchWeather };
 };
 
 const useTheme = () => {
